@@ -13,15 +13,13 @@ exports.onPreBootstrap = async ({ actions, store }) => {
 }
 
 exports.createSchemaCustomization = ({ actions, schema }) => {
-  const { createTypes } = actions
-
-  createTypes([
+  actions.createTypes([
     schema.buildScalarType({
       name: `GraphQLComponent`,
       description: `React component available through GraphQL`,
       serialize: GraphQLJSONObject.serialize,
       parseValue: GraphQLJSONObject.parseValue,
-      parseLiteral: GraphQLJSONObject.parseLiteral
+      parseLiteral: GraphQLJSONObject.parseLiteral,
     }),
     schema.buildObjectType({
       name: `GraphQLComponentSource`,
@@ -29,10 +27,10 @@ exports.createSchemaCustomization = ({ actions, schema }) => {
       fields: {
         componentPath: `String!`,
         componentChunkName: `String!`,
-        componentName: `String!`
+        componentName: `String!`,
       },
-      interfaces: [`Node`]
-    })
+      interfaces: [`Node`],
+    }),
   ])
 }
 
@@ -43,34 +41,35 @@ exports.createPages = async ({ getNodesByType, store }) => {
   const nodes = getNodesByType(`GraphQLComponentSource`)
 
   // Create file with sync requires of components/json files.
+  // prettier-ignore
   let syncRequires = `
 // prefer default export if available
-const preferDefault = m => m && m.default || m
-\n\n`
+const preferDefault = m => m && m.default || m\n\n`
   syncRequires += `exports.components = {\n${nodes
-    .map(node => `  "${node.componentChunkName}": preferDefault(require("${node.componentPath}"))`)
+    .map((node) => `  "${node.componentChunkName}": preferDefault(require("${node.componentPath}"))`)
     .join(`,\n`)}
 }\n\n`
 
-  const asyncRequires = `// prefer default export if available
-
-const preferDefault = m => m && m.default || m
+  //prettier-ignore
+  const asyncRequires = `
+// prefer default export if available
+const preferDefault = m => m && m.default || m\n\n
 exports.components = {\n${nodes
-    .map(node => {
-      return `  "${node.componentChunkName}": () => import("${node.componentPath}" /* webpackChunkName: "${node.componentChunkName}" */).then(preferDefault)`
-    })
-    .join(`,\n`)}
+.map((node) => {
+  return `  "${node.componentChunkName}": () => import("${node.componentPath}" /* webpackChunkName: "${node.componentChunkName}" */).then(preferDefault)`
+})
+.join(`,\n`)}
 }\n\n`
 
   await Promise.all([
     writeFile({
       filePath: path.join(writeDirectory, `sync-requires.js`),
-      data: syncRequires
+      data: syncRequires,
     }),
     writeFile({
       filePath: path.join(writeDirectory, `async-requires.js`),
-      data: asyncRequires
-    })
+      data: asyncRequires,
+    }),
   ])
 }
 
@@ -83,11 +82,11 @@ exports.onPreBuild = async ({ store }) => {
     const { directory } = store.getState().program
     const writeDirectory = await ensureWriteDirectory({ baseDirectory: directory })
 
-    store.getState().staticQueryComponents.forEach(value => {
+    store.getState().staticQueryComponents.forEach((value) => {
       promises.push(
         new Promise((resolve, reject) => {
           fs.readFile(path.join(directory, `public`, `page-data`, `sq`, `d`, `${value.hash}.json`), `utf-8`)
-            .then(data => {
+            .then((data) => {
               const result = JSON.parse(data)
 
               const definitions = []
@@ -96,16 +95,17 @@ exports.onPreBuild = async ({ store }) => {
                 json: result,
                 onDefinition: ({ definition }) => {
                   definitions.push(definition)
-                }
+                },
               })
 
               if (definitions.length) {
+                // prettier-ignore
                 const source = `
 ${definitions.map(({ componentName, componentPath }) => `import ${componentName} from "${componentPath}"`).join(`\n`)}
 import { transformSync } from "gatsby-plugin-graphql-component/transform"
 
 const map = {
-    ${definitions.map(({ componentName }) => `${componentName}`).join(`,`)}
+  ${definitions.map(({ componentName }) => `${componentName}`).join(`,`)}
 }
 
 const cache = new WeakMap()
@@ -125,13 +125,14 @@ export default (data) => {
 
   return transformed
 }`
+
                 const filename = `static-query-${value.hash}.js`
 
                 return fs.writeFile(path.join(writeDirectory, filename), source).then(() => {
                   staticQueries[value.componentPath] = {
                     ...value,
                     result,
-                    importPath: `~gatsby-plugin-graphql-component/${filename}`
+                    importPath: `~gatsby-plugin-graphql-component/${filename}`,
                   }
                 })
               }
@@ -156,8 +157,8 @@ exports.onCreateBabelConfig = async ({ actions, store }) => {
   actions.setBabelPlugin({
     name: require.resolve(`./static-query-babel-plugin`),
     options: {
-      staticQueriesPath: path.join(writeDirectory, `static-queries.json`)
-    }
+      staticQueriesPath: path.join(writeDirectory, `static-queries.json`),
+    },
   })
 }
 
@@ -169,8 +170,8 @@ exports.onCreateWebpackConfig = async ({ store, actions }) => {
     resolve: {
       alias: {
         "~gatsby-plugin-graphql-component-gatsby-cache": path.join(directory, `.cache`),
-        "~gatsby-plugin-graphql-component": writeDirectory
-      }
-    }
+        "~gatsby-plugin-graphql-component": writeDirectory,
+      },
+    },
   })
 }
