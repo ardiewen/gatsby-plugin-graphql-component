@@ -3,38 +3,6 @@ import { transform } from "./transform"
 
 // on client entry is called almost as a first lifecycle
 export const onClientEntry = async () => {
-  // this code patches "development" mode
-  if (process.env.NODE_ENV !== `production`) {
-    // require is used so the
-    // requires can be be removed during production build
-    const { default: socketIo } = require(`~gatsby-plugin-graphql-component-gatsby-cache/socketIo`)
-    const syncRequires = require(`~gatsby-plugin-graphql-component/sync-requires`)
-    const { transformSync } = require(`./transform`)
-
-    const emitter = window.___emitter
-
-    const onResult = ({ result }) => {
-      if (result) {
-        Object.assign(
-          result,
-          transformSync({
-            json: result,
-            load: ({ componentChunkName }) => syncRequires.components[componentChunkName]
-          })
-        )
-      }
-    }
-
-    // emmitter emits new results on page / static query queries,
-    // we will patch the response with components
-    emitter.on(`staticQueryResult`, onResult)
-    emitter.on(`pageQueryResult`, onResult)
-
-    // we need to initialize socketIo, because core initializes it after this call,
-    // but it needs to be initilized when calling loadPage later in the code
-    socketIo()
-  }
-
   const loader = window.___loader
 
   const { loadPage } = loader
@@ -54,7 +22,7 @@ export const onClientEntry = async () => {
         json: result.json.data,
         load: ({ componentChunkName }) => {
           return components[componentChunkName]()
-        }
+        },
       })
 
       cache.set(result, true)
