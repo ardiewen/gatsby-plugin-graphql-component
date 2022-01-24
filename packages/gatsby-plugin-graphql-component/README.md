@@ -93,7 +93,7 @@ module.exports = {
 
 ## Usage for plugin creators
 
-The component file needs to be registered with the plugin by creating a `Component` node. The plugin exports a `createComponentNode` function which you should call during the `sourceNodes` build phase. As a side effect, the component is added to the webpack's build. Then you can extend the schema with `createResolverField` function during the `createResolvers` which will enable the component in the queries.
+The component file needs to be registered with the plugin by creating a `Component` node. The plugin exports a `registerComponent` function which you should call during the `sourceNodes` build phase. As a side effect, the component is added to the webpack's build. Then you can extend the schema with `createResolverField` function during the `createResolvers` which will enable the component in the queries.
 
 ```js
 const { registerComponent, createResolverField } = require(`gatsby-plugin-graphql-component`)

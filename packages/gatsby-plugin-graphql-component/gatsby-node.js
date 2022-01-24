@@ -42,10 +42,10 @@ exports.createPages = async ({ getNodesByType, store }) => {
 
   // Create file with sync requires of components/json files.
   // prettier-ignore
-  let syncRequires = `
+  const syncRequires = `
 // prefer default export if available
-const preferDefault = m => m && m.default || m\n\n`
-  syncRequires += `exports.components = {\n${nodes
+const preferDefault = m => m && m.default || m\n\n
+exports.components = {\n${nodes
     .map((node) => `  "${node.componentChunkName}": preferDefault(require("${node.componentPath}"))`)
     .join(`,\n`)}
 }\n\n`
@@ -73,7 +73,7 @@ exports.components = {\n${nodes
   ])
 }
 
-exports.onPreBuild = async ({ store }) => {
+exports.onPostBuild = async ({ store }) => {
   if (process.env.NODE_ENV === `production`) {
     const staticQueries = {}
 
@@ -150,17 +150,17 @@ export default (data) => {
   }
 }
 
-exports.onCreateBabelConfig = async ({ actions, store }) => {
-  const { directory } = store.getState().program
-  const writeDirectory = await ensureWriteDirectory({ baseDirectory: directory })
+// exports.onCreateBabelConfig = async ({ actions, store }) => {
+//   const { directory } = store.getState().program
+//   const writeDirectory = await ensureWriteDirectory({ baseDirectory: directory })
 
-  actions.setBabelPlugin({
-    name: require.resolve(`./static-query-babel-plugin`),
-    options: {
-      staticQueriesPath: path.join(writeDirectory, `static-queries.json`),
-    },
-  })
-}
+//   actions.setBabelPlugin({
+//     name: require.resolve(`./static-query-babel-plugin`),
+//     options: {
+//       staticQueriesPath: path.join(writeDirectory, `static-queries.json`),
+//     },
+//   })
+// }
 
 exports.onCreateWebpackConfig = async ({ store, actions }) => {
   const { directory } = store.getState().program
